@@ -52,8 +52,14 @@
     font-size: 27px; color: var(--gold); margin: 0; font-weight: 600; }
   .raid__count { color: var(--ink-faint); font-size: 12.5px; }
   .boss { margin: 22px 0 0; }
-  .boss__head { display: flex; align-items: baseline; gap: 12px;
-    border-bottom: 1px solid var(--line); padding-bottom: 7px; margin-bottom: 12px; flex-wrap: wrap; }
+  .boss__head { display: flex; align-items: baseline; gap: 12px; cursor: pointer;
+    user-select: none; border-bottom: 1px solid var(--line); padding-bottom: 7px;
+    margin-bottom: 12px; flex-wrap: wrap; }
+  .boss__head::before { content: '\25BE'; color: var(--ink-faint); font-size: 12px; }
+  .boss.collapsed .boss__head::before { content: '\25B8'; }
+  .boss.collapsed .card, .boss.collapsed .noresults { display: none; }
+  .boss__head:hover h3 { color: var(--gold); }
+  .boss__head:focus-visible { outline: 2px solid var(--fel); outline-offset: 2px; }
   .boss__num { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--fel); }
   .boss__head h3 { font-family: "Palatino Linotype", Palatino, Georgia, serif;
     font-weight: 600; font-size: 20px; margin: 0; color: var(--ink); }
@@ -184,6 +190,7 @@
   <button class="fbtn" data-f="za" style="--hl:var(--c-za)" aria-pressed="false">ZA BIS</button>
   <button class="fbtn" data-f="alt" aria-pressed="false">Alt</button>
   <button class="fbtn" data-f="meh" aria-pressed="false">Meh + patterns</button>
+  <button class="fbtn" id="collapseall" aria-pressed="false">Collapse all</button>
   <div class="classrow" role="group" aria-label="Filter by class"><button class="cbtn" data-c="Druid" style="--cc:#FF7C0A" aria-pressed="false">Druid</button><button class="cbtn" data-c="Hunter" style="--cc:#AAD372" aria-pressed="false">Hunter</button><button class="cbtn" data-c="Mage" style="--cc:#3FC7EB" aria-pressed="false">Mage</button><button class="cbtn" data-c="Paladin" style="--cc:#F48CBA" aria-pressed="false">Paladin</button><button class="cbtn" data-c="Priest" style="--cc:#F2EDDC" aria-pressed="false">Priest</button><button class="cbtn" data-c="Rogue" style="--cc:#FFF468" aria-pressed="false">Rogue</button><button class="cbtn" data-c="Shaman" style="--cc:#2695FF" aria-pressed="false">Shaman</button><button class="cbtn" data-c="Warlock" style="--cc:#8788EE" aria-pressed="false">Warlock</button><button class="cbtn" data-c="Warrior" style="--cc:#C69B6D" aria-pressed="false">Warrior</button></div>
 </div>
 
@@ -3547,13 +3554,41 @@
       if (show) visible++;
     });
     bosses.forEach(function (s) {
-      s.style.display = s.querySelector('.card:not(.hidden)') ? '' : 'none';
+      var any = s.querySelector('.card:not(.hidden)');
+      s.style.display = any ? '' : 'none';
+      if (term && any) s.classList.remove('collapsed');
     });
     raids.forEach(function (r) {
       r.style.display = r.querySelector('.card:not(.hidden)') ? '' : 'none';
     });
     nores.style.display = visible ? 'none' : 'block';
   }
+  bosses.forEach(function (s) {
+    var h = s.querySelector('.boss__head');
+    if (!h) return;
+    h.setAttribute('role', 'button');
+    h.tabIndex = 0;
+    h.setAttribute('aria-expanded', 'true');
+    function flip() {
+      var c = s.classList.toggle('collapsed');
+      h.setAttribute('aria-expanded', c ? 'false' : 'true');
+    }
+    h.addEventListener('click', flip);
+    h.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+    });
+  });
+  var collapseBtn = document.getElementById('collapseall');
+  collapseBtn.addEventListener('click', function () {
+    var collapsing = collapseBtn.getAttribute('aria-pressed') !== 'true';
+    collapseBtn.setAttribute('aria-pressed', collapsing ? 'true' : 'false');
+    collapseBtn.textContent = collapsing ? 'Expand all' : 'Collapse all';
+    bosses.forEach(function (s) {
+      s.classList.toggle('collapsed', collapsing);
+      var h = s.querySelector('.boss__head');
+      if (h) h.setAttribute('aria-expanded', collapsing ? 'false' : 'true');
+    });
+  });
   function setMode(tier) {
     vboss.setAttribute('aria-pressed', tier ? 'false' : 'true');
     vtier.setAttribute('aria-pressed', tier ? 'true' : 'false');
